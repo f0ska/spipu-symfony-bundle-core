@@ -118,6 +118,7 @@ class AsynchronousCommand
      * request, so the child CLI process is not detected as running in a web context.
      *
      * @return array<string, false>
+     * @SuppressWarnings(PHPMD.Superglobals)
      */
     private function buildRequestEnvOverride(): array
     {
