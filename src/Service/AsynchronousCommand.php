@@ -99,6 +99,7 @@ class AsynchronousCommand
     {
         $process = $this->create($command, $parameters);
         $process->setOptions(['create_new_console' => true]);
+        $process->setEnv($this->buildRequestEnvOverride());
         try {
             $process->start();
         } catch (RuntimeException $e) {
@@ -110,5 +111,45 @@ class AsynchronousCommand
         }
 
         return true;
+    }
+
+    /**
+     * Build the env override that strips CGI/HTTP variables inherited from a PHP-FPM/Apache
+     * request, so the child CLI process is not detected as running in a web context.
+     *
+     * @return array<string, false>
+     * @SuppressWarnings(PHPMD.Superglobals)
+     */
+    private function buildRequestEnvOverride(): array
+    {
+        $cgiVars = [
+            'QUERY_STRING', 'REQUEST_METHOD', 'REQUEST_URI', 'REQUEST_SCHEME',
+            'REQUEST_TIME', 'REQUEST_TIME_FLOAT', 'CONTENT_TYPE', 'CONTENT_LENGTH',
+            'SCRIPT_NAME', 'SCRIPT_FILENAME', 'PATH_INFO', 'PATH_TRANSLATED',
+            'DOCUMENT_ROOT', 'DOCUMENT_URI', 'CONTEXT_DOCUMENT_ROOT', 'CONTEXT_PREFIX',
+            'GATEWAY_INTERFACE', 'AUTH_TYPE', 'FCGI_ROLE', 'HTTPS',
+            'SERVER_PROTOCOL', 'SERVER_SOFTWARE', 'SERVER_NAME', 'SERVER_ADDR',
+            'SERVER_PORT', 'SERVER_ADMIN', 'SERVER_SIGNATURE',
+            'REMOTE_ADDR', 'REMOTE_PORT', 'REMOTE_USER', 'REMOTE_HOST', 'REMOTE_IDENT',
+            'PHP_AUTH_USER', 'PHP_AUTH_PW', 'PHP_AUTH_DIGEST',
+            'UNIQUE_ID',
+        ];
+        $prefixes = ['HTTP_', 'REDIRECT_'];
+
+        $override = [];
+        foreach (array_keys($_SERVER) as $key) {
+            if (in_array($key, $cgiVars, true)) {
+                $override[$key] = false;
+                continue;
+            }
+            foreach ($prefixes as $prefix) {
+                if (strpos($key, $prefix) === 0) {
+                    $override[$key] = false;
+                    break;
+                }
+            }
+        }
+
+        return $override;
     }
 }
