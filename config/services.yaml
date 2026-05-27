@@ -36,6 +36,9 @@ services:
     Spipu\CoreBundle\Service\SluggerInterface:
         class: Spipu\CoreBundle\Service\Slugger
 
+    Spipu\CoreBundle\Service\ConnectionQuoterFactoryInterface:
+        class: Spipu\CoreBundle\Service\ConnectionQuoterFactory
+
     Spipu\CoreBundle\Service\Filesystem:
         arguments: []
 
