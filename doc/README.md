@@ -21,6 +21,7 @@ The **CoreBundle** is the foundation of the Spipu bundle suite. It provides shar
 - **Assets / AssetInterface** — bundle asset publishing (vendor, URL, or ZIP sources)
 - **Slugger** — URL-safe slug generation (ASCII, lowercase)
 - **Filesystem / FinderFactory** — testable wrappers around Symfony Filesystem and Finder
+- **ConnectionQuoterFactory / ConnectionQuoterInterface** — DBAL identifier and value quoting, abstracts the deprecated `Connection::quoteIdentifier()` (DBAL 4.4+) and provides safe value quoting with type validation
 
 ## Requirements
 

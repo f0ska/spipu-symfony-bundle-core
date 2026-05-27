@@ -452,6 +452,59 @@ Inject `FinderFactory` instead of instantiating `Finder` directly so the factory
 
 ---
 
+## ConnectionQuoterFactory / ConnectionQuoter
+
+Wraps DBAL identifier and value quoting behind a stable interface. Useful when building raw SQL queries from variable identifiers (table or column names) or values.
+
+The factory creates a `ConnectionQuoterInterface` bound to a specific `Doctrine\DBAL\Connection`. The quoter delegates identifier quoting to `AbstractPlatform::quoteSingleIdentifier()` (works across all DBAL 3.x and 4.x versions) and value quoting to `Connection::quote()`, with explicit type validation.
+
+**Service:** `Spipu\CoreBundle\Service\ConnectionQuoterFactoryInterface`
+
+```php
+use Doctrine\DBAL\Connection;
+use Spipu\CoreBundle\Service\ConnectionQuoterFactoryInterface;
+
+class MyService
+{
+    public function __construct(private ConnectionQuoterFactoryInterface $quoterFactory) {}
+
+    public function buildQuery(Connection $connection, string $table, array $rowValues): string
+    {
+        $quoter = $this->quoterFactory->create($connection);
+
+        return sprintf(
+            'INSERT INTO %s VALUES (%s)',
+            $quoter->quoteIdentifier($table),
+            $quoter->quoteValues($rowValues)
+        );
+    }
+}
+```
+
+**`ConnectionQuoterFactoryInterface`:**
+
+| Method | Description |
+|--------|-------------|
+| `create(Connection $connection): ConnectionQuoterInterface` | Build a quoter bound to the given DBAL connection |
+
+**`ConnectionQuoterInterface`:**
+
+| Method | Description |
+|--------|-------------|
+| `quoteIdentifier(string $identifier): string` | Quote a (possibly qualified) identifier — splits on `.` and quotes each part (`my_schema.my_table` → `` `my_schema`.`my_table` ``) |
+| `quoteSingleIdentifier(string $identifier): string` | Quote a single identifier part — does not split on `.` (use for column or table names known to contain no dot) |
+| `quoteValue(mixed $value): string` | Quote a scalar value as a SQL literal (handles `null` → `'NULL'`, `bool` → `'0'`/`'1'`, `int`/`float` → cast, `string`/`Stringable` → `Connection::quote()`) |
+| `quoteValues(array $values): string` | Quote each item with `quoteValue()` and join with `,` (for `IN (...)` clauses or row tuples); throws on empty array |
+
+**Notes:**
+- `quoteValue()` throws `ConnectionQuoterException` for `array`, `resource`, or non-`Stringable` objects — failing fast on misuse rather than silently producing broken SQL.
+- `quoteValues()` throws `ConnectionQuoterException` on an empty array (an empty `IN ()` would produce invalid SQL).
+- For high-throughput row loops (millions of rows), prefer an inline switch over `quoteValue()` — the method call overhead is measurable. See `ProcessBundle::ImportFileToTable` for an example of the inline pattern.
+
+**Exception:** `Spipu\CoreBundle\Exception\ConnectionQuoterException` — thrown by `quoteValue()` and `quoteValues()` on unsupported input.
+
+---
+
 ## Assets / AssetInterface
 
 Publishes static assets from bundles (or external URLs/ZIPs) into the application's `public/bundles/` directory.
