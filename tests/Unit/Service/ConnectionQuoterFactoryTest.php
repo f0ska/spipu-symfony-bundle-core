@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Spipu\CoreBundle\Tests\Unit\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Spipu\CoreBundle\Service\ConnectionQuoter;
 use Spipu\CoreBundle\Service\ConnectionQuoterFactory;
 use Spipu\CoreBundle\Service\ConnectionQuoterInterface;
 
+#[AllowMockObjectsWithoutExpectations]
+#[CoversClass(ConnectionQuoterFactory::class)]
 class ConnectionQuoterFactoryTest extends TestCase
 {
     public function testCreateReturnsConnectionQuoter(): void
@@ -26,15 +29,12 @@ class ConnectionQuoterFactoryTest extends TestCase
 
     public function testCreatedQuoterIsBoundToGivenConnection(): void
     {
-        $platform = $this->createMock(AbstractPlatform::class);
-        $platform
+        $connection = $this->createMock(Connection::class);
+        $connection
             ->expects($this->once())
             ->method('quoteSingleIdentifier')
             ->with('foo')
             ->willReturn('`foo`');
-
-        $connection = $this->createMock(Connection::class);
-        $connection->method('getDatabasePlatform')->willReturn($platform);
 
         $factory = new ConnectionQuoterFactory();
         $quoter = $factory->create($connection);

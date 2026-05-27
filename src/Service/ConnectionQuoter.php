@@ -39,7 +39,7 @@ final class ConnectionQuoter implements ConnectionQuoterInterface
 
     public function quoteSingleIdentifier(string $identifier): string
     {
-        return $this->connection->getDatabasePlatform()->quoteSingleIdentifier($identifier);
+        return $this->connection->quoteSingleIdentifier($identifier);
     }
 
     public function quoteValue(mixed $value): string

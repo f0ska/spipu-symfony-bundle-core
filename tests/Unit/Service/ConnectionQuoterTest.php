@@ -5,75 +5,70 @@ declare(strict_types=1);
 namespace Spipu\CoreBundle\Tests\Unit\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Spipu\CoreBundle\Exception\ConnectionQuoterException;
 use Spipu\CoreBundle\Service\ConnectionQuoter;
 
+#[AllowMockObjectsWithoutExpectations]
+#[CoversClass(ConnectionQuoter::class)]
 class ConnectionQuoterTest extends TestCase
 {
-    private function getConnectionWithPlatform(AbstractPlatform&MockObject $platform): Connection&MockObject
+    public function testQuoteSingleIdentifierDelegatesToConnection(): void
     {
         $connection = $this->createMock(Connection::class);
-        $connection->method('getDatabasePlatform')->willReturn($platform);
-        return $connection;
-    }
-
-    public function testQuoteSingleIdentifierDelegatesToPlatform(): void
-    {
-        $platform = $this->createMock(AbstractPlatform::class);
-        $platform
+        $connection
             ->expects($this->once())
             ->method('quoteSingleIdentifier')
             ->with('my_table')
             ->willReturn('`my_table`');
 
-        $quoter = new ConnectionQuoter($this->getConnectionWithPlatform($platform));
+        $quoter = new ConnectionQuoter($connection);
 
         $this->assertSame('`my_table`', $quoter->quoteSingleIdentifier('my_table'));
     }
 
     public function testQuoteIdentifierWithSimpleName(): void
     {
-        $platform = $this->createMock(AbstractPlatform::class);
-        $platform
+        $connection = $this->createMock(Connection::class);
+        $connection
             ->expects($this->once())
             ->method('quoteSingleIdentifier')
             ->with('my_table')
             ->willReturn('`my_table`');
 
-        $quoter = new ConnectionQuoter($this->getConnectionWithPlatform($platform));
+        $quoter = new ConnectionQuoter($connection);
 
         $this->assertSame('`my_table`', $quoter->quoteIdentifier('my_table'));
     }
 
     public function testQuoteIdentifierWithQualifiedName(): void
     {
-        $platform = $this->createMock(AbstractPlatform::class);
-        $platform
+        $connection = $this->createMock(Connection::class);
+        $connection
             ->expects($this->exactly(2))
             ->method('quoteSingleIdentifier')
             ->willReturnCallback(
                 fn(string $part): string => '`' . $part . '`'
             );
 
-        $quoter = new ConnectionQuoter($this->getConnectionWithPlatform($platform));
+        $quoter = new ConnectionQuoter($connection);
 
         $this->assertSame('`my_schema`.`my_table`', $quoter->quoteIdentifier('my_schema.my_table'));
     }
 
     public function testQuoteIdentifierWithThreeParts(): void
     {
-        $platform = $this->createMock(AbstractPlatform::class);
-        $platform
+        $connection = $this->createMock(Connection::class);
+        $connection
             ->expects($this->exactly(3))
             ->method('quoteSingleIdentifier')
             ->willReturnCallback(
                 fn(string $part): string => '`' . $part . '`'
             );
 
-        $quoter = new ConnectionQuoter($this->getConnectionWithPlatform($platform));
+        $quoter = new ConnectionQuoter($connection);
 
         $this->assertSame('`a`.`b`.`c`', $quoter->quoteIdentifier('a.b.c'));
     }
