@@ -19,6 +19,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -550,14 +551,14 @@ class SymfonyMock extends TestCase
 
     /**
      * @param TestCase $testCase
-     * @return MockObject|OutputInterface
+     * @return Stub|OutputInterface
      */
     public static function getConsoleOutput(TestCase $testCase): OutputInterface
     {
         self::$consoleOutputMessages = [];
 
-        $output = $testCase->createMock(OutputInterface::class);
-        $formatter = $testCase->createMock(OutputFormatterInterface::class);
+        $output = $testCase->createStub(OutputInterface::class);
+        $formatter = $testCase->createStub(OutputFormatterInterface::class);
 
         $formatter
             ->method('isDecorated')
@@ -589,7 +590,7 @@ class SymfonyMock extends TestCase
                 }
             );
 
-        /** @var MockObject|OutputInterface $output */
+        /** @var Stub|OutputInterface $output */
         return $output;
     }
 
